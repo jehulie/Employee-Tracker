@@ -17,9 +17,9 @@ VALUES ("software engineer", 110000, 1),
     ("benefits counselor", 65000, 4);
 
 INSERT INTO employee (first_name, last_name, role_id, manager_id)
-VALUES ("Jack", "Beanstalk", 1, 3),
+VALUES ("Jack", "Beanstalk", 1, NULL),
     ("Mary", "Lamb", 2, 1),
-    ("Peter", "Pan", 3, 4),
-    ("Cinder", "Rella", 4, 5),
-    ("Prince", "Valiant", 5, 2);
-    ("Hansel", "Gretel", 6, 3);
+    ("Peter", "Pan", 3, NULL),
+    ("Cinder", "Rella", 4, 1),
+    ("Prince", "Valiant", 5, 3);
+    -- ("Hansel", "Gretel", 6, 3);

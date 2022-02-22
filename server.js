@@ -1,13 +1,11 @@
-require('dotenv').config({ path: require('find-config')('.env') });
-const mysql = require('mysql');
+require('dotenv').config();
+const mysql = require('mysql2');
 const inquirer = require('inquirer');
 const consoleTable = require('console.table');
-const { response } = require('express');
 
 // creates connection to sql database
 const connection = mysql.createConnection({
     host: 'localhost',
-    port: 3301,
     user: 'root',
     password: process.env.MYSQL_PASSWORD,
     database: 'employees_db'
@@ -16,9 +14,9 @@ const connection = mysql.createConnection({
 // connects to sql server and sql database
 connection.connect(err => {
     if (err) throw err;
-    options();
 });
 
+options();
 // prompts user with list of options to choose from
 function options() {
     inquirer
@@ -60,7 +58,7 @@ function options() {
                     updateRole();
                     break;
                 case 'EXIT':
-                    exitApp();
+                    Quit();
                     break;
                 default:
                     break;
@@ -80,7 +78,7 @@ function viewDepartments() {
 
 // view all roles in the database
 function viewRoles() {
-    const table = `SELECT role.id as Role ID, role.title as Role, department.name AS Department
+    const table = `SELECT role.id AS Role_ID, role.title AS Role, department.name AS Department
     FROM role
     INNER JOIN department ON role.department_id = department.id`;
     connection.query(table, function (err, res) {
@@ -92,13 +90,13 @@ function viewRoles() {
 
 // view all employees in the database
 function viewEmployees() {
-    const table = `SELECT employee.id as Employee ID, 
-    employee.first_name as First Name, 
-    employee.last_name as Last Name, 
-    role.title as Role, 
-    department.name AS department,
-    role.salary as Salary,
-    manager_id as Manager ID 
+    const table = `SELECT employee.id AS Employee_ID, 
+    employee.first_name AS First_Name, 
+    employee.last_name AS Last_Name, 
+    role.title AS Role, 
+    department.name AS Department,
+    role.salary AS Salary,
+    manager_id AS Manager_ID 
 FROM employee
     LEFT JOIN role ON employee.role_id = role.id
     LEFT JOIN department ON role.department_id = department.id`;
@@ -276,7 +274,7 @@ function updateRole() {
                     message: "What is the employee's new role?",
                     choices: roleChoice
                 },
-            ]).then (function (answer) {
+            ]).then(function (answer) {
                 let newRole_id;
                 for (let a = 0; a < res.length; a++) {
                     if (res[a].title == answer.role_id) {
@@ -287,7 +285,7 @@ function updateRole() {
                 connection.query(
                     'UPDATE employee SET ? WHERE ?? = ?;',
                     // Syntax to set role_id: response.role_id
-                    { 
+                    {
                         first_name: answer.first_name,
                         last_name: answer.last_name,
                         role_id: answer.role,
@@ -298,11 +296,12 @@ function updateRole() {
                         console.log('Updated the role of ' + answer.first_name + ' ' + answer.last_name + '!');
 
                         viewEmployees();
+                    });
+            });
         });
-    };
+    });
+}
 
-
-    // exit the app
-    function exitApp() {
-        connection.end();
-    };
+function Quit() {
+    process.exit();
+};
