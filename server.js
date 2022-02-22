@@ -118,23 +118,21 @@ function addDepartment() {
                 message: 'Enter the name of the new department you would like to add.'
             }
         ]).then(function (answer) {
-            connection.query(
-                'INSERT INTO department SET ?',
-                {
-                    name: answer.newDepartment
-                });
-            connection.query(answer.newDepartment, function (err, res) {
+            const sql =
+                `INSERT INTO department (name) VALUES (?)`;
+            connection.query(sql, answer.newDepartment, function (err, res) {
                 if (err) throw err;
-                console.log('Added' + answer.newDepartment + ' to departments!');
-
-                viewDepartments();
+                console.log('Added ' + answer.newDepartment + ' to departments!');
+            
+            viewDepartments();    
             });
         });
 };
 
+// Need to fix all the code below...
 // add a role to the database
 function addRole() {
-    connection.query('SELECT * FROM department', function (err, res) {
+    connection.query('SELECT name, id FROM department', function (err, res) {
         if (err) throw err;
 
         inquirer
@@ -187,7 +185,7 @@ function addRole() {
 
 // add an employee to the database
 function addEmployee() {
-    connection.query('SELECT * FROM role', function (err, res) {
+    connection.query('SELECT role.id, role.title FROM role', function (err, res) {
         if (err) throw err;
         inquirer
             .prompt([
