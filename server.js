@@ -2,6 +2,7 @@ require('dotenv').config();
 const mysql = require('mysql2');
 const inquirer = require('inquirer');
 const consoleTable = require('console.table');
+const { process_params } = require('express/lib/router');
 
 // creates connection to sql database
 const connection = mysql.createConnection({
@@ -189,104 +190,100 @@ function addEmployee() {
         const managerArray = data.map(({ id, first_name, last_name }) => ({ name: first_name + " " + last_name, value: id }));
 
 
-    connection.query('SELECT * FROM role', function (err, data) {
-        if (err) throw err;
-        const roleArray = data.map(({ title, id }) => ({ name: title, value: id }));
-    
-    inquirer
-        .prompt([
-            {
-                name: 'first_name',
-                type: 'input',
-                message: "What is the employee's fist name? ",
-            },
-            {
-                name: 'last_name',
-                type: 'input',
-                message: "What is the employee's last name? "
-            },
-            {
-                name: 'manager_id',
-                type: 'list',
-                choices: managerArray,
-                message: "What is the employee's manager's ID? "
-            },
-            {
-                name: 'role',
-                type: 'list',
-                choices: roleArray,
-                message: "What is this employee's role? "
-            },
-        ]).then(function (answer) {
-            connection.query(
-                'INSERT INTO employee SET ?',
-                {
-                    first_name: answer.first_name,
-                    last_name: answer.last_name,
-                    role_id: answer.role,
-                    manager_id: answer.manager_id,
-                },
-                function (err) {
-                    if (err) throw err;
-                    console.log('Added' + answer.first_name + ' ' + answer.last_name + ' to employees!');
+        connection.query('SELECT * FROM role', function (err, data) {
+            if (err) throw err;
+            const roleArray = data.map(({ title, id }) => ({ name: title, value: id }));
 
-                    viewEmployees();
+            inquirer
+                .prompt([
+                    {
+                        name: 'first_name',
+                        type: 'input',
+                        message: "What is the employee's fist name? ",
+                    },
+                    {
+                        name: 'last_name',
+                        type: 'input',
+                        message: "What is the employee's last name? "
+                    },
+                    {
+                        name: 'manager_id',
+                        type: 'list',
+                        choices: managerArray,
+                        message: "What is the employee's manager's ID? "
+                    },
+                    {
+                        name: 'role',
+                        type: 'list',
+                        choices: roleArray,
+                        message: "What is this employee's role? "
+                    },
+                ]).then(function (answer) {
+                    connection.query(
+                        'INSERT INTO employee SET ?',
+                        {
+                            first_name: answer.first_name,
+                            last_name: answer.last_name,
+                            role_id: answer.role,
+                            manager_id: answer.manager_id,
+                        },
+                        function (err) {
+                            if (err) throw err;
+                            console.log('Added' + answer.first_name + ' ' + answer.last_name + ' to employees!');
+
+                            viewEmployees();
+                        });
                 });
         });
     });
-});
 };
 
-// Need to fix all the code below...
+// Need to fix all the code below...not updating table showing new role
 // update a role in the database
 function updateRole() {
     connection.query('SELECT * FROM employee', function (err, data) {
         if (err) throw err;
         const employees = data.map(({ id, first_name, last_name }) => ({ name: first_name + " " + last_name, value: id }));
 
-    connection.query('SELECT * FROM role', function (err, data) {
-        if (err) throw err;
-        const roleChoice = data.map(({ title, id }) => ({ name: title, value: id }));
+        connection.query('SELECT * FROM role', function (err, data) {
+            if (err) throw err;
+            const roleChoice = data.map(({ title, id }) => ({ name: title, value: id }));
 
-    inquirer.prompt([
-        {
-            type: 'list',
-            name: 'name',
-            message: "Which employee would you like to update?",
-            choices: employees
-        },
-        {
-            type: 'list',
-            name: 'role_id',
-            message: "What is the employee's new role?",
-            choices: roleChoice
-        },
-    ]).then(function (answer) {
-        let newRole_id;
-        // problem below with "res"
-        for (let a = 0; a < res.length; a++) {
-            if (res[a].title == answer.role_id) {
-                newRole_id = res[a].id;
-                console.log(newRole_id)
-            }
-        }
-        connection.query(
-            'UPDATE employee SET ? WHERE ?? = ?;',
-            // Syntax to set role_id: response.role_id
-            {
-                first_name: answer.first_name,
-                last_name: answer.last_name,
-                role_id: answer.role,
-                manager_id: answer.manager_id,
-            },
-            function (err) {
-                if (err) throw err;
-                console.log('Updated the role of ' + answer.first_name + ' ' + answer.last_name + '!');
+            inquirer.prompt([
+                {
+                    type: 'list',
+                    name: 'name',
+                    message: "Which employee would you like to update?",
+                    choices: employees
+                },
+                {
+                    type: 'list',
+                    name: 'role_id',
+                    message: "What is the employee's new role?",
+                    choices: roleChoice
+                },
+            ]).then(function (answer) {
+                // connection.query(
+                //     'UPDATE employee SET ? WHERE ?? = ?;',
+                //     // Syntax problem somewhere here
+                // {
+                //     role_id: answer.role_id
+                // },
+                // function (err) {
+                //     if (err) throw err;
+                const query = `UPDATE EMPLOYEE SET ? WHERE ?? = ?;`;
+                connection.query(query, [
+                    { role_id: answer.role_id },
+                    "id",
+                    answer.id
+                ], (err, res) => {
+                    if (err) throw err;
+                    console.log('Updated the role of employee!');
 
-                viewEmployees();
+                    viewEmployees();
+                });
             });
-    });
-});
+        });
     });
 }
 
