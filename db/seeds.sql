@@ -22,4 +22,3 @@ VALUES ("Jack", "Beanstalk", 1, NULL),
     ("Peter", "Pan", 3, NULL),
     ("Cinder", "Rella", 4, 1),
     ("Prince", "Valiant", 5, 3);
-    -- ("Hansel", "Gretel", 6, 3);

@@ -78,7 +78,7 @@ function viewDepartments() {
 
 // view all roles in the database
 function viewRoles() {
-    const table = `SELECT role.id AS Role_ID, role.title AS Role, department.name AS Department
+    const table = `SELECT role.id AS Role_ID, role.title AS Role, role.salary AS Salary, department.name AS Department
     FROM role
     INNER JOIN department ON role.department_id = department.id`;
     connection.query(table, function (err, res) {
@@ -123,13 +123,12 @@ function addDepartment() {
             connection.query(sql, answer.newDepartment, function (err, res) {
                 if (err) throw err;
                 console.log('Added ' + answer.newDepartment + ' to departments!');
-            
-            viewDepartments();    
+
+                viewDepartments();
             });
         });
 };
 
-// Need to fix all the code below...
 // add a role to the database
 function addRole() {
     connection.query('SELECT name, id FROM department', function (err, res) {
@@ -175,7 +174,7 @@ function addRole() {
                     },
                     function (err, res) {
                         if (err) throw err;
-                        console.log('Added' + answer.new_role + ' to roles!');
+                        console.log('Added ' + answer.new_role + ' to roles!');
 
                         viewRoles();
                     });
@@ -185,118 +184,109 @@ function addRole() {
 
 // add an employee to the database
 function addEmployee() {
-    connection.query('SELECT role.id, role.title FROM role', function (err, res) {
+    connection.query('SELECT * FROM employee', function (err, data) {
         if (err) throw err;
-        inquirer
-            .prompt([
-                {
-                    name: 'first_name',
-                    type: 'input',
-                    message: "What is the employee's fist name? ",
-                },
-                {
-                    name: 'last_name',
-                    type: 'input',
-                    message: "What is the employee's last name? "
-                },
-                {
-                    name: 'manager_id',
-                    type: 'list',
-                    choices: function () {
-                        var managerArray = [];
-                        for (let i = 0; i < res.length; i++) {
-                            managerArray.push(res[i].manager_id);
-                        }
-                        return managerArray;
-                    },
-                    message: "What is the employee's manager's ID? "
-                },
-                {
-                    name: 'role',
-                    type: 'list',
-                    choices: function () {
-                        var roleArray = [];
-                        for (let i = 0; i < res.length; i++) {
-                            roleArray.push(res[i].title);
-                        }
-                        return roleArray;
-                    },
-                    message: "What is this employee's role? "
-                },
-            ]).then(function (answer) {
-                let role_id;
-                for (let a = 0; a < res.length; a++) {
-                    if (res[a].title == answer.role) {
-                        role_id = res[a].id;
-                        console.log(role_id)
-                    }
-                }
-                connection.query(
-                    'INSERT INTO employee SET ?',
-                    {
-                        first_name: answer.first_name,
-                        last_name: answer.last_name,
-                        role_id: answer.role,
-                        manager_id: answer.manager_id,
-                    },
-                    function (err) {
-                        if (err) throw err;
-                        console.log('Added' + answer.first_name + ' ' + answer.last_name + ' to employees!');
+        const managerArray = data.map(({ id, first_name, last_name }) => ({ name: first_name + " " + last_name, value: id }));
 
-                        viewEmployees();
-                    });
-            });
+
+    connection.query('SELECT * FROM role', function (err, data) {
+        if (err) throw err;
+        const roleArray = data.map(({ title, id }) => ({ name: title, value: id }));
+    
+    inquirer
+        .prompt([
+            {
+                name: 'first_name',
+                type: 'input',
+                message: "What is the employee's fist name? ",
+            },
+            {
+                name: 'last_name',
+                type: 'input',
+                message: "What is the employee's last name? "
+            },
+            {
+                name: 'manager_id',
+                type: 'list',
+                choices: managerArray,
+                message: "What is the employee's manager's ID? "
+            },
+            {
+                name: 'role',
+                type: 'list',
+                choices: roleArray,
+                message: "What is this employee's role? "
+            },
+        ]).then(function (answer) {
+            connection.query(
+                'INSERT INTO employee SET ?',
+                {
+                    first_name: answer.first_name,
+                    last_name: answer.last_name,
+                    role_id: answer.role,
+                    manager_id: answer.manager_id,
+                },
+                function (err) {
+                    if (err) throw err;
+                    console.log('Added' + answer.first_name + ' ' + answer.last_name + ' to employees!');
+
+                    viewEmployees();
+                });
+        });
     });
+});
 };
 
+// Need to fix all the code below...
 // update a role in the database
 function updateRole() {
-    connection.query('SELECT * FROM employee', function (err, res) {
+    connection.query('SELECT * FROM employee', function (err, data) {
         if (err) throw err;
         const employees = data.map(({ id, first_name, last_name }) => ({ name: first_name + " " + last_name, value: id }));
 
-        connection.query('SELECT * FROM role', function (err, res) {
-            if (err) throw err;
-            const roleChoice = data.map(({ title, id }) => ({ name: title, value: id }));
+    connection.query('SELECT * FROM role', function (err, data) {
+        if (err) throw err;
+        const roleChoice = data.map(({ title, id }) => ({ name: title, value: id }));
 
-            inquirer.prompt([
-                {
-                    type: 'list',
-                    name: 'name',
-                    message: "Which employee would you like to update?",
-                    choices: employees
-                },
-                {
-                    type: 'list',
-                    name: 'role_id',
-                    message: "What is the employee's new role?",
-                    choices: roleChoice
-                },
-            ]).then(function (answer) {
-                let newRole_id;
-                for (let a = 0; a < res.length; a++) {
-                    if (res[a].title == answer.role_id) {
-                        newRole_id = res[a].id;
-                        console.log(newRole_id)
-                    }
-                }
-                connection.query(
-                    'UPDATE employee SET ? WHERE ?? = ?;',
-                    // Syntax to set role_id: response.role_id
-                    {
-                        first_name: answer.first_name,
-                        last_name: answer.last_name,
-                        role_id: answer.role,
-                        manager_id: answer.manager_id,
-                    },
-                    function (err) {
-                        if (err) throw err;
-                        console.log('Updated the role of ' + answer.first_name + ' ' + answer.last_name + '!');
+    inquirer.prompt([
+        {
+            type: 'list',
+            name: 'name',
+            message: "Which employee would you like to update?",
+            choices: employees
+        },
+        {
+            type: 'list',
+            name: 'role_id',
+            message: "What is the employee's new role?",
+            choices: roleChoice
+        },
+    ]).then(function (answer) {
+        let newRole_id;
+        // problem below with "res"
+        for (let a = 0; a < res.length; a++) {
+            if (res[a].title == answer.role_id) {
+                newRole_id = res[a].id;
+                console.log(newRole_id)
+            }
+        }
+        connection.query(
+            'UPDATE employee SET ? WHERE ?? = ?;',
+            // Syntax to set role_id: response.role_id
+            {
+                first_name: answer.first_name,
+                last_name: answer.last_name,
+                role_id: answer.role,
+                manager_id: answer.manager_id,
+            },
+            function (err) {
+                if (err) throw err;
+                console.log('Updated the role of ' + answer.first_name + ' ' + answer.last_name + '!');
 
-                        viewEmployees();
-                    });
+                viewEmployees();
             });
-        });
+    });
+});
     });
 }
 
