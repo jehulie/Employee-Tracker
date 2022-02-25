@@ -238,50 +238,43 @@ function addEmployee() {
     });
 };
 
-// Need to fix all the code below...not updating table showing new role
 // update a role in the database
 function updateRole() {
     connection.query('SELECT * FROM employee', function (err, data) {
         if (err) throw err;
         const employees = data.map(({ id, first_name, last_name }) => ({ name: first_name + " " + last_name, value: id }));
+        inquirer.prompt([
+            {
+                type: 'list',
+                name: 'name',
+                message: "Which employee would you like to update?",
+                choices: employees
+            },
+        ]).then(function (answer) {
+            let employeeID = answer.name;
+            connection.query('SELECT * FROM role', function (err, data) {
+                if (err) throw err;
+                const roleChoice = data.map(({ title, id }) => ({ name: title, value: id }));
+                inquirer.prompt([
+                    {
+                        type: 'list',
+                        name: 'role_id',
+                        message: "What is the employee's new role?",
+                        choices: roleChoice
+                    },
+                ])
+                    .then(function (answer) {
+                        const query = `UPDATE EMPLOYEE SET role_id=? WHERE id = ?;`;
+                        connection.query(query, [
+                            answer.role_id,
+                            employeeID
+                        ], (err, res) => {
+                            if (err) throw err;
+                            console.log('Updated the role of employee!');
 
-        connection.query('SELECT * FROM role', function (err, data) {
-            if (err) throw err;
-            const roleChoice = data.map(({ title, id }) => ({ name: title, value: id }));
-
-            inquirer.prompt([
-                {
-                    type: 'list',
-                    name: 'name',
-                    message: "Which employee would you like to update?",
-                    choices: employees
-                },
-                {
-                    type: 'list',
-                    name: 'role_id',
-                    message: "What is the employee's new role?",
-                    choices: roleChoice
-                },
-            ]).then(function (answer) {
-                // connection.query(
-                //     'UPDATE employee SET ? WHERE ?? = ?;',
-                //     // Syntax problem somewhere here
-                // {
-                //     role_id: answer.role_id
-                // },
-                // function (err) {
-                //     if (err) throw err;
-                const query = `UPDATE EMPLOYEE SET ? WHERE ?? = ?;`;
-                connection.query(query, [
-                    { role_id: answer.role_id },
-                    "id",
-                    answer.id
-                ], (err, res) => {
-                    if (err) throw err;
-                    console.log('Updated the role of employee!');
-
-                    viewEmployees();
-                });
+                            viewEmployees();
+                        });
+                    });
             });
         });
     });
